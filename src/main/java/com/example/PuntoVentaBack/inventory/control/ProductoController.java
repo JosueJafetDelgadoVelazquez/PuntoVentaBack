@@ -8,8 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/productos")
 @CrossOrigin(origins = "*")
@@ -21,25 +19,35 @@ public class ProductoController {
     @Autowired
     private TallasCategoriaRepository tallasCategoriaRepository;
 
-    @GetMapping
-    public List<Producto> getProductos() {
-        return productoRepository.findAll();
-    }
-
     @PostMapping
-    public ResponseEntity<?> crearProducto(@RequestBody Producto producto) {
+    public ResponseEntity<?> crearProducto(@RequestBody Producto productoRequest) {
         try {
-            if (producto.getTallasCategoria() != null && producto.getTallasCategoria().getNombre() != null) {
-                TallasCategoria categoria = tallasCategoriaRepository
-                        .findByNombre(producto.getTallasCategoria().getNombre())
+            // Crear nueva instancia de Producto
+            Producto producto = new Producto();
+            producto.setNombre(productoRequest.getNombre());
+            producto.setCodigoBarras(productoRequest.getCodigoBarras());
+            producto.setStock(productoRequest.getStock());
+            producto.setDescripcion(productoRequest.getDescripcion());
+            producto.setImagen(productoRequest.getImagen());
+            producto.setCategoriaProducto(productoRequest.getCategoriaProducto());
+            producto.setSexo(productoRequest.getSexo());
+            // Manejo de la categoría de tallas
+            if (productoRequest.getTallasCategoria() != null && productoRequest.getTallasCategoria().getId() != null) {
+                TallasCategoria categoria = tallasCategoriaRepository.findById(productoRequest.getTallasCategoria().getId())
                         .orElseThrow(() -> new RuntimeException("Categoría de talla no encontrada"));
-
                 producto.setTallasCategoria(categoria);
             }
-            Producto guardado = productoRepository.save(producto);
-            return ResponseEntity.ok(guardado);
+
+            // Validaciones
+            if (producto.getNombre() == null || producto.getNombre().isEmpty()) {
+                return ResponseEntity.badRequest().body("El nombre es obligatorio");
+            }
+
+            Producto productoGuardado = productoRepository.save(producto);
+            return ResponseEntity.ok(productoGuardado);
+
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al guardar: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Error al crear producto: " + e.getMessage());
         }
     }
 }

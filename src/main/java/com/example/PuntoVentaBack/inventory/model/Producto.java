@@ -11,20 +11,37 @@ public class Producto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String nombre;
+
+    @Column(name = "codigo_barras", nullable = false, unique = true)
     private String codigoBarras;
+
     private int stock;
     private String descripcion;
 
     @Column(columnDefinition = "LONGTEXT")
     private String imagen;
 
-    private String categoriaProducto; // Nueva columna para Empresa, Escuela, etc.
+    private String categoriaProducto;
+
+
+    @Column(name = "sexo")
+    private String sexo;
+
 
     @ManyToOne
     @JoinColumn(name = "id_tallas_categoria")
     private TallasCategoria tallasCategoria;
 
+    // Getter y Setter
+    public String getSexo() {
+        return sexo;
+    }
+
+    public void setSexo(String sexo) {
+        this.sexo = sexo;
+    }
     // Getters y setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -47,10 +64,7 @@ public class Producto {
     public String getCategoriaProducto() { return categoriaProducto; }
     public void setCategoriaProducto(String categoriaProducto) { this.categoriaProducto = categoriaProducto; }
 
-    public TallasCategoria getTallasCategoria() {
-        return tallasCategoria;
-    }
-
+    public TallasCategoria getTallasCategoria() { return tallasCategoria; }
     public void setTallasCategoria(TallasCategoria tallasCategoria) {
         this.tallasCategoria = tallasCategoria;
     }
