@@ -25,24 +25,14 @@ public class Producto {
 
     private String categoriaProducto;
 
-
     @Column(name = "sexo")
     private String sexo;
-
 
     @ManyToOne
     @JoinColumn(name = "id_tallas_categoria")
     private TallasCategoria tallasCategoria;
 
-    // Getter y Setter
-    public String getSexo() {
-        return sexo;
-    }
-
-    public void setSexo(String sexo) {
-        this.sexo = sexo;
-    }
-    // Getters y setters
+    // Getters y Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -64,8 +54,9 @@ public class Producto {
     public String getCategoriaProducto() { return categoriaProducto; }
     public void setCategoriaProducto(String categoriaProducto) { this.categoriaProducto = categoriaProducto; }
 
+    public String getSexo() { return sexo; }
+    public void setSexo(String sexo) { this.sexo = sexo; }
+
     public TallasCategoria getTallasCategoria() { return tallasCategoria; }
-    public void setTallasCategoria(TallasCategoria tallasCategoria) {
-        this.tallasCategoria = tallasCategoria;
-    }
+    public void setTallasCategoria(TallasCategoria tallasCategoria) { this.tallasCategoria = tallasCategoria; }
 }

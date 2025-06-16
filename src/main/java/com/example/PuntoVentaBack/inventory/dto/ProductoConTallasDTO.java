@@ -10,7 +10,7 @@ public class ProductoConTallasDTO {
     public String imagen;
     public String categoriaProducto;
     public String sexo;
-    public Long idTallasCategoria;
+    public Long idTallasCategoria;  // Mantenemos este campo
     public List<TallaPrecioDTO> tallas;
 
     public static class TallaPrecioDTO {

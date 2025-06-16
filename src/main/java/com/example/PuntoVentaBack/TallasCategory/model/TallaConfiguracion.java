@@ -1,11 +1,8 @@
 package com.example.PuntoVentaBack.TallasCategory.model;
 
 import com.example.PuntoVentaBack.category.model.TallasCategoria;
-
 import com.example.PuntoVentaBack.inventory.model.Producto;
-
 import jakarta.persistence.*;
-
 
 @Entity
 @Table(name = "talla_configuracion")
@@ -16,7 +13,6 @@ public class TallaConfiguracion {
     private Long id;
 
     private String talla;
-
     private double precio;
 
     @ManyToOne
@@ -24,10 +20,10 @@ public class TallaConfiguracion {
     private Producto producto;
 
     @ManyToOne
-    @JoinColumn(name = "id_tallaCategoria")
+    @JoinColumn(name = "id_tallas_categoria")
     private TallasCategoria tallaCategoria;
 
-    // Getters y setters
+    // Getters y Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
