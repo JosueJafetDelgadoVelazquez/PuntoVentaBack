@@ -1,4 +1,4 @@
-package com.example.PuntoVentaBack.TallasCategory.model;
+package com.example.PuntoVentaBack.TallasConfiguracion.model;
 
 import com.example.PuntoVentaBack.category.model.TallasCategoria;
 import com.example.PuntoVentaBack.inventory.model.Producto;

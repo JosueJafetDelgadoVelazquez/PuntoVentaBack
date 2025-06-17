@@ -1,6 +1,5 @@
-package com.example.PuntoVentaBack.TallasCategory.model;
+package com.example.PuntoVentaBack.TallasConfiguracion.model;
 
-import com.example.PuntoVentaBack.TallasCategory.model.TallaConfiguracion;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

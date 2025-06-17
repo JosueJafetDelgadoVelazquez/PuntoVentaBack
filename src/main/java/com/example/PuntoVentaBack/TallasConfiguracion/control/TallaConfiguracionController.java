@@ -1,7 +1,7 @@
-package com.example.PuntoVentaBack.TallasCategory.control;
+package com.example.PuntoVentaBack.TallasConfiguracion.control;
 
-import com.example.PuntoVentaBack.TallasCategory.model.TallaConfiguracion;
-import com.example.PuntoVentaBack.TallasCategory.model.TallaConfiguracionRepository;
+import com.example.PuntoVentaBack.TallasConfiguracion.model.TallaConfiguracion;
+import com.example.PuntoVentaBack.TallasConfiguracion.model.TallaConfiguracionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

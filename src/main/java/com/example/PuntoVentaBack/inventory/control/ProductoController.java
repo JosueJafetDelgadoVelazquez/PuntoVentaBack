@@ -1,7 +1,7 @@
 package com.example.PuntoVentaBack.inventory.control;
 
-import com.example.PuntoVentaBack.TallasCategory.model.TallaConfiguracion;
-import com.example.PuntoVentaBack.TallasCategory.model.TallaConfiguracionRepository;
+import com.example.PuntoVentaBack.TallasConfiguracion.model.TallaConfiguracion;
+import com.example.PuntoVentaBack.TallasConfiguracion.model.TallaConfiguracionRepository;
 import com.example.PuntoVentaBack.category.model.TallasCategoria;
 import com.example.PuntoVentaBack.category.model.TallasCategoriaRepository;
 import com.example.PuntoVentaBack.inventory.model.Producto;
@@ -110,6 +110,14 @@ public class ProductoController {
             @PathVariable Long id,
             @RequestBody ProductoConTallasDTO dto) {
         try {
+            // Validación básica
+            if (dto.nombre == null || dto.nombre.isEmpty()) {
+                return ResponseEntity.badRequest().body("El nombre es obligatorio");
+            }
+            if (dto.codigoBarras == null || dto.codigoBarras.isEmpty()) {
+                return ResponseEntity.badRequest().body("El código de barras es obligatorio");
+            }
+
             Optional<Producto> productoExistente = productoRepository.findById(id);
             if (productoExistente.isEmpty()) {
                 return ResponseEntity.notFound().build();
@@ -124,17 +132,37 @@ public class ProductoController {
             producto.setCategoriaProducto(dto.categoriaProducto);
             producto.setSexo(dto.sexo);
 
-            // Actualizar categoría de tallas si se proporciona
+            // Manejo de categoría de tallas
             if (dto.idTallasCategoria != null) {
                 TallasCategoria tallasCategoria = tallasCategoriaRepository.findById(dto.idTallasCategoria)
                         .orElseThrow(() -> new RuntimeException("Categoría de tallas no encontrada"));
                 producto.setTallasCategoria(tallasCategoria);
+            } else {
+                producto.setTallasCategoria(null);
             }
 
+            // Guardar primero el producto
             Producto productoActualizado = productoRepository.save(producto);
 
-            // Actualizar tallas (opcional, dependiendo de tu lógica de negocio)
-            // Podrías eliminar las existentes y crear nuevas, o actualizar las que coincidan
+            // Eliminar tallas existentes
+            List<TallaConfiguracion> tallasExistentes = tallaConfiguracionRepository.findByProductoId(id);
+            tallaConfiguracionRepository.deleteAll(tallasExistentes);
+
+            // Crear nuevas tallas si existen
+            if (dto.tallas != null && !dto.tallas.isEmpty()) {
+                for (ProductoConTallasDTO.TallaPrecioDTO t : dto.tallas) {
+                    TallaConfiguracion conf = new TallaConfiguracion();
+                    conf.setProducto(productoActualizado);
+                    conf.setTalla(t.talla);
+                    conf.setPrecio(t.precio);
+
+                    if (productoActualizado.getTallasCategoria() != null) {
+                        conf.setTallaCategoria(productoActualizado.getTallasCategoria());
+                    }
+
+                    tallaConfiguracionRepository.save(conf);
+                }
+            }
 
             return ResponseEntity.ok(productoActualizado);
         } catch (Exception e) {
