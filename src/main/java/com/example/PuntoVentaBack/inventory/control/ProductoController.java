@@ -16,7 +16,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/productos")
-@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "*")
 public class ProductoController {
 
     @Autowired
@@ -31,7 +31,6 @@ public class ProductoController {
     @PostMapping
     public ResponseEntity<?> crearProducto(@RequestBody ProductoConTallasDTO dto) {
         try {
-            // Validación básica
             if (dto.nombre == null || dto.nombre.isEmpty()) {
                 return ResponseEntity.badRequest().body("El nombre es obligatorio");
             }
@@ -47,8 +46,8 @@ public class ProductoController {
             producto.setImagen(dto.imagen);
             producto.setCategoriaProducto(dto.categoriaProducto);
             producto.setSexo(dto.sexo);
+            producto.setHabilitado(true);
 
-            // Asignar categoría de tallas si existe
             if (dto.idTallasCategoria != null) {
                 TallasCategoria tallasCategoria = tallasCategoriaRepository.findById(dto.idTallasCategoria)
                         .orElseThrow(() -> new RuntimeException("Categoría de tallas no encontrada"));
@@ -57,7 +56,6 @@ public class ProductoController {
 
             Producto productoGuardado = productoRepository.save(producto);
 
-            // Guardar tallas si se proporcionaron
             if (dto.tallas != null && !dto.tallas.isEmpty()) {
                 for (ProductoConTallasDTO.TallaPrecioDTO t : dto.tallas) {
                     TallaConfiguracion conf = new TallaConfiguracion();
@@ -106,11 +104,8 @@ public class ProductoController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> actualizarProducto(
-            @PathVariable Long id,
-            @RequestBody ProductoConTallasDTO dto) {
+    public ResponseEntity<?> actualizarProducto(@PathVariable Long id, @RequestBody ProductoConTallasDTO dto) {
         try {
-            // Validación básica
             if (dto.nombre == null || dto.nombre.isEmpty()) {
                 return ResponseEntity.badRequest().body("El nombre es obligatorio");
             }
@@ -132,7 +127,6 @@ public class ProductoController {
             producto.setCategoriaProducto(dto.categoriaProducto);
             producto.setSexo(dto.sexo);
 
-            // Manejo de categoría de tallas
             if (dto.idTallasCategoria != null) {
                 TallasCategoria tallasCategoria = tallasCategoriaRepository.findById(dto.idTallasCategoria)
                         .orElseThrow(() -> new RuntimeException("Categoría de tallas no encontrada"));
@@ -141,14 +135,11 @@ public class ProductoController {
                 producto.setTallasCategoria(null);
             }
 
-            // Guardar primero el producto
             Producto productoActualizado = productoRepository.save(producto);
 
-            // Eliminar tallas existentes
             List<TallaConfiguracion> tallasExistentes = tallaConfiguracionRepository.findByProductoId(id);
             tallaConfiguracionRepository.deleteAll(tallasExistentes);
 
-            // Crear nuevas tallas si existen
             if (dto.tallas != null && !dto.tallas.isEmpty()) {
                 for (ProductoConTallasDTO.TallaPrecioDTO t : dto.tallas) {
                     TallaConfiguracion conf = new TallaConfiguracion();
@@ -177,16 +168,38 @@ public class ProductoController {
                 return ResponseEntity.notFound().build();
             }
 
-            // Primero eliminar las configuraciones de tallas asociadas
             List<TallaConfiguracion> tallas = tallaConfiguracionRepository.findByProductoId(id);
             tallaConfiguracionRepository.deleteAll(tallas);
 
-            // Luego eliminar el producto
             productoRepository.deleteById(id);
 
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Error al eliminar producto: " + e.getMessage());
         }
+    }
+
+    @PatchMapping("/{id}/habilitar")
+    public ResponseEntity<?> habilitarProducto(@PathVariable Long id) {
+        Optional<Producto> optionalProducto = productoRepository.findById(id);
+        if (optionalProducto.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Producto producto = optionalProducto.get();
+        producto.setHabilitado(true);
+        productoRepository.save(producto);
+        return ResponseEntity.ok().body("Producto habilitado correctamente");
+    }
+
+    @PatchMapping("/{id}/deshabilitar")
+    public ResponseEntity<?> deshabilitarProducto(@PathVariable Long id) {
+        Optional<Producto> optionalProducto = productoRepository.findById(id);
+        if (optionalProducto.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Producto producto = optionalProducto.get();
+        producto.setHabilitado(false);
+        productoRepository.save(producto);
+        return ResponseEntity.ok().body("Producto deshabilitado correctamente");
     }
 }

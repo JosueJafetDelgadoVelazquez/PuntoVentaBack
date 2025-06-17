@@ -11,7 +11,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/tallas-configuracion")
-@CrossOrigin(origins = "*")
+// @CrossOrigin(origins = "*")
 public class TallaConfiguracionController {
 
     @Autowired

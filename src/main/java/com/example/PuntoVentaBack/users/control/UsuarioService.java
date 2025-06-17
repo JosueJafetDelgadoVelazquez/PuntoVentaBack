@@ -41,4 +41,30 @@ public class UsuarioService {
     public boolean existsByCorreo(String correo) {
         return usuarioRepository.existsByCorreo(correo);
     }
+
+    public List<Usuario> findByHabilitado(boolean habilitado) {
+        return usuarioRepository.findByHabilitado(habilitado);
+    }
+
+    public Optional<Usuario> habilitarUsuario(Long id) {
+        return usuarioRepository.findById(id)
+                .map(usuario -> {
+                    usuario.setHabilitado(true);
+                    return usuarioRepository.save(usuario);
+                });
+    }
+
+    public Optional<Usuario> deshabilitarUsuario(Long id) {
+        return usuarioRepository.findById(id)
+                .map(usuario -> {
+                    usuario.setHabilitado(false);
+                    return usuarioRepository.save(usuario);
+                });
+    }
+
+    public Optional<Usuario> login(String correo, String contraseña) {
+        return usuarioRepository.findByCorreo(correo)
+                .filter(usuario -> usuario.getContraseña().equals(contraseña))
+                .filter(Usuario::isHabilitado);
+    }
 }

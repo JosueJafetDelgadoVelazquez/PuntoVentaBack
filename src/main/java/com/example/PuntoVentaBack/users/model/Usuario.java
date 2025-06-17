@@ -1,11 +1,15 @@
 package com.example.PuntoVentaBack.users.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import jakarta.persistence.*;
+
 import java.util.Objects;
 
 @Entity
 @Table(name = "usuarios")
 public class Usuario {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -20,8 +24,11 @@ public class Usuario {
     private String contraseña;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('Administradores', 'Cajeros') DEFAULT 'Cajeros'")
+    @Column(nullable = false, length = 20)
     private Rol rol = Rol.CAJEROS;
+
+    @Column(nullable = false)
+    private boolean habilitado = true;
 
     // Getters y Setters
     public Long getId() {
@@ -64,17 +71,44 @@ public class Usuario {
         this.rol = rol;
     }
 
-    // Enumerado para los roles
-    public enum Rol {
-        ADMINISTRADORES,
-        CAJEROS
+    public boolean isHabilitado() {
+        return habilitado;
     }
 
-    // equals, hashCode y toString
+    public void setHabilitado(boolean habilitado) {
+        this.habilitado = habilitado;
+    }
+
+    public enum Rol {
+        ADMINISTRADORES("Administradores"),
+        CAJEROS("Cajeros");
+
+        private final String valor;
+
+        Rol(String valor) {
+            this.valor = valor;
+        }
+
+        @JsonValue
+        public String getValor() {
+            return valor;
+        }
+
+        @JsonCreator
+        public static Rol desdeValor(String valor) {
+            for (Rol r : Rol.values()) {
+                if (r.valor.equalsIgnoreCase(valor)) {
+                    return r;
+                }
+            }
+            throw new IllegalArgumentException("Rol inválido: " + valor);
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof Usuario)) return false;
         Usuario usuario = (Usuario) o;
         return Objects.equals(id, usuario.id);
     }
@@ -82,15 +116,5 @@ public class Usuario {
     @Override
     public int hashCode() {
         return Objects.hash(id);
-    }
-
-    @Override
-    public String toString() {
-        return "Usuario{" +
-                "id=" + id +
-                ", nombre='" + nombre + '\'' +
-                ", correo='" + correo + '\'' +
-                ", rol=" + rol +
-                '}';
     }
 }

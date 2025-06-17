@@ -33,6 +33,8 @@ public class UsuarioController {
 
     @PostMapping
     public Usuario createUsuario(@RequestBody Usuario usuario) {
+        // Por defecto, nuevos usuarios están habilitados
+        usuario.setHabilitado(true);
         return usuarioService.save(usuario);
     }
 
@@ -42,7 +44,12 @@ public class UsuarioController {
                 .map(usuario -> {
                     usuario.setNombre(usuarioDetails.getNombre());
                     usuario.setCorreo(usuarioDetails.getCorreo());
-                    usuario.setContraseña(usuarioDetails.getContraseña());
+
+                    // ✅ Solo actualizar contraseña si viene no vacía
+                    if (usuarioDetails.getContraseña() != null && !usuarioDetails.getContraseña().isEmpty()) {
+                        usuario.setContraseña(usuarioDetails.getContraseña());
+                    }
+
                     usuario.setRol(usuarioDetails.getRol());
                     return ResponseEntity.ok(usuarioService.save(usuario));
                 })
@@ -63,5 +70,24 @@ public class UsuarioController {
         return usuarioService.findByCorreo(correo)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/{id}/habilitar")
+    public ResponseEntity<Usuario> habilitarUsuario(@PathVariable Long id) {
+        return usuarioService.habilitarUsuario(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/{id}/deshabilitar")
+    public ResponseEntity<Usuario> deshabilitarUsuario(@PathVariable Long id) {
+        return usuarioService.deshabilitarUsuario(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/estado/{habilitado}")
+    public List<Usuario> getUsuariosPorEstado(@PathVariable boolean habilitado) {
+        return usuarioService.findByHabilitado(habilitado);
     }
 }
