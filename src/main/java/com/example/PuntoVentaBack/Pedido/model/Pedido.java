@@ -19,6 +19,8 @@ public class Pedido {
 
     private double pagoProducto;
 
+    private String talla; // NUEVO CAMPO
+
     @ManyToOne
     @JoinColumn(name = "id_pago")
     private Pago pago;
@@ -43,6 +45,9 @@ public class Pedido {
 
     public double getPagoProducto() { return pagoProducto; }
     public void setPagoProducto(double pagoProducto) { this.pagoProducto = pagoProducto; }
+
+    public String getTalla() { return talla; }
+    public void setTalla(String talla) { this.talla = talla; }
 
     public Pago getPago() { return pago; }
     public void setPago(Pago pago) { this.pago = pago; }
