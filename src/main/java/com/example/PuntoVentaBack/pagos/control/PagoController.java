@@ -40,75 +40,122 @@ public class PagoController {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            String metodoPago = (dto.getMetodo_pago() != null && !dto.getMetodo_pago().isEmpty())
-                    ? dto.getMetodo_pago().toUpperCase()
+            // Validación básica del DTO
+            if (dto == null) {
+                response.put("success", false);
+                response.put("message", "El cuerpo de la petición no puede estar vacío");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Establecer método de pago por defecto si no viene
+            String metodoPago = (dto.getMetodoPago() != null && !dto.getMetodoPago().isEmpty())
+                    ? dto.getMetodoPago().toUpperCase()
                     : "EFECTIVO";
 
+            // Validar productos
             if (dto.getProductos() == null || dto.getProductos().isEmpty()) {
                 response.put("success", false);
                 response.put("message", "Debe incluir al menos un producto");
                 return ResponseEntity.badRequest().body(response);
             }
 
+            // Configurar el pago
             Pago pago = new Pago();
             pago.setMetodoPago(metodoPago);
+            pago.setPermiteStockNegativo(dto.isPermiteStockNegativo() != null && dto.isPermiteStockNegativo());
+            pago.setFechaHora(LocalDateTime.now());
 
+            // Procesar cada producto
             List<Pedido> pedidos = dto.getProductos().stream().map(p -> {
-                Producto producto = productoRepository.findById(p.getIdProducto())
-                        .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
-
-                TallaConfiguracion talla = tallaConfiguracionRepository.findById(p.getIdTallaConfiguracion())
-                        .orElseThrow(() -> new RuntimeException("Talla no encontrada"));
-
-                if (producto.getStock() < p.getCantidad()) {
-                    throw new RuntimeException("Stock insuficiente para: " + producto.getNombre());
+                // Validar producto
+                if (p.getProductoId() == null || p.getTalla() == null || p.getCantidad() <= 0) {
+                    throw new RuntimeException("Datos del producto incompletos o inválidos");
                 }
 
-                producto.setStock(producto.getStock() - p.getCantidad());
+                Producto producto = productoRepository.findById(p.getProductoId())
+                        .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + p.getProductoId()));
+
+                // Buscar talla específica para el producto
+                TallaConfiguracion talla = tallaConfiguracionRepository
+                        .findByProductoIdAndTalla(producto.getId(), p.getTalla())
+                        .orElseThrow(() -> new RuntimeException(
+                                "Talla " + p.getTalla() + " no disponible para el producto: " + producto.getNombre()));
+
+                // Validar stock
+                int nuevoStock = producto.getStock() - p.getCantidad();
+                if (!pago.isPermiteStockNegativo() && nuevoStock < 0) {
+                    throw new RuntimeException(String.format(
+                            "Stock insuficiente para %s (Talla %s). Stock actual: %d, se requieren: %d",
+                            producto.getNombre(),
+                            talla.getTalla(),
+                            producto.getStock(),
+                            p.getCantidad()));
+                }
+
+                // Actualizar stock
+                producto.setStock(nuevoStock);
                 productoRepository.save(producto);
 
+                // Crear pedido
                 Pedido pedido = new Pedido();
                 pedido.setProducto(producto);
                 pedido.setTallaConfiguracion(talla);
-                pedido.setNombreProducto(p.getNombreProducto());
+                pedido.setNombreProducto(producto.getNombre());
                 pedido.setCantidad(p.getCantidad());
                 pedido.setPagoProducto(p.getCantidad() * talla.getPrecio());
-                pedido.setTalla(talla.getTalla()); // NUEVO
+                pedido.setTalla(talla.getTalla());
                 pedido.setPago(pago);
 
                 return pedido;
             }).collect(Collectors.toList());
 
+            // Calcular total
             double total = pedidos.stream()
                     .mapToDouble(Pedido::getPagoProducto)
                     .sum();
             pago.setTotalPagado(total);
 
+            // Guardar en base de datos
             Pago pagoGuardado = pagoRepository.save(pago);
             pedidoRepository.saveAll(pedidos);
 
+            // Preparar respuesta exitosa
             response.put("success", true);
             response.put("message", "Pago registrado exitosamente");
             response.put("data", pagoGuardado);
             return ResponseEntity.ok(response);
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
+            // Errores de negocio conocidos
             response.put("success", false);
-            response.put("message", "Error al registrar el pago: " + e.getMessage());
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            // Errores inesperados
+            response.put("success", false);
+            response.put("message", "Error interno al procesar el pago");
             return ResponseEntity.internalServerError().body(response);
         }
     }
 
-
     @GetMapping
     public ResponseEntity<List<Pago>> obtenerTodosLosPagos() {
-        return ResponseEntity.ok(pagoRepository.findAll());
+        try {
+            List<Pago> pagos = pagoRepository.findAll();
+            return ResponseEntity.ok(pagos);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Pago> obtenerPagoPorId(@PathVariable Long id) {
-        return pagoRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        try {
+            return pagoRepository.findById(id)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }

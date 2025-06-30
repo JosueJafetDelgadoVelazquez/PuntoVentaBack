@@ -3,38 +3,24 @@ package com.example.PuntoVentaBack.pagos.dto;
 import java.util.List;
 
 public class PagoDTO {
-    private String metodo_pago;
-    private List<PedidoDTO> productos;
+    private String metodoPago; // Cambiado de metodo_pago a metodoPago
+    private double total; // Nuevo campo para el total
+    private Boolean permiteStockNegativo; // Nuevo campo para control de stock negativo
+    private List<ProductoPagoDTO> productos; // Cambiado de PedidoDTO a ProductoPagoDTO
 
-    public static class PedidoDTO {
-        private Long idProducto;
-        private Long idTallaConfiguracion;
-        private String nombreProducto;
+    public static class ProductoPagoDTO {
+        private Long productoId; // Cambiado de idProducto a productoId
         private int cantidad;
+        private double precio; // Nuevo campo
+        private String talla; // Nuevo campo (antes era idTallaConfiguracion)
 
         // Getters y Setters
-        public Long getIdProducto() {
-            return idProducto;
+        public Long getProductoId() {
+            return productoId;
         }
 
-        public void setIdProducto(Long idProducto) {
-            this.idProducto = idProducto;
-        }
-
-        public Long getIdTallaConfiguracion() {
-            return idTallaConfiguracion;
-        }
-
-        public void setIdTallaConfiguracion(Long idTallaConfiguracion) {
-            this.idTallaConfiguracion = idTallaConfiguracion;
-        }
-
-        public String getNombreProducto() {
-            return nombreProducto;
-        }
-
-        public void setNombreProducto(String nombreProducto) {
-            this.nombreProducto = nombreProducto;
+        public void setProductoId(Long productoId) {
+            this.productoId = productoId;
         }
 
         public int getCantidad() {
@@ -44,22 +30,54 @@ public class PagoDTO {
         public void setCantidad(int cantidad) {
             this.cantidad = cantidad;
         }
+
+        public double getPrecio() {
+            return precio;
+        }
+
+        public void setPrecio(double precio) {
+            this.precio = precio;
+        }
+
+        public String getTalla() {
+            return talla;
+        }
+
+        public void setTalla(String talla) {
+            this.talla = talla;
+        }
     }
 
     // Getters y Setters
-    public String getMetodo_pago() {
-        return metodo_pago;
+    public String getMetodoPago() {
+        return metodoPago;
     }
 
-    public void setMetodo_pago(String metodo_pago) {
-        this.metodo_pago = metodo_pago;
+    public void setMetodoPago(String metodoPago) {
+        this.metodoPago = metodoPago;
     }
 
-    public List<PedidoDTO> getProductos() {
+    public double getTotal() {
+        return total;
+    }
+
+    public void setTotal(double total) {
+        this.total = total;
+    }
+
+    public Boolean isPermiteStockNegativo() {
+        return permiteStockNegativo;
+    }
+
+    public void setPermiteStockNegativo(Boolean permiteStockNegativo) {
+        this.permiteStockNegativo = permiteStockNegativo;
+    }
+
+    public List<ProductoPagoDTO> getProductos() {
         return productos;
     }
 
-    public void setProductos(List<PedidoDTO> productos) {
+    public void setProductos(List<ProductoPagoDTO> productos) {
         this.productos = productos;
     }
 }
