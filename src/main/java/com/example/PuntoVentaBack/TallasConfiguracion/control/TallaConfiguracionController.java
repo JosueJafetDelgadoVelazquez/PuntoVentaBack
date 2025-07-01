@@ -2,6 +2,7 @@ package com.example.PuntoVentaBack.TallasConfiguracion.control;
 
 import com.example.PuntoVentaBack.TallasConfiguracion.model.TallaConfiguracion;
 import com.example.PuntoVentaBack.TallasConfiguracion.model.TallaConfiguracionRepository;
+import com.example.PuntoVentaBack.inventory.control.ProductoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,16 +12,18 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/tallas-configuracion")
-// @CrossOrigin(origins = "*")
 public class TallaConfiguracionController {
 
     @Autowired
     private TallaConfiguracionRepository repository;
 
+    @Autowired
+    private ProductoService productoService;
+
     @PostMapping
     public ResponseEntity<?> crearTallaConfiguracion(@RequestBody TallaConfiguracion configuracion) {
         try {
-            // Validación básica
+            // Validaciones
             if (configuracion.getTalla() == null || configuracion.getTalla().isEmpty()) {
                 return ResponseEntity.badRequest().body("La talla es obligatoria");
             }
@@ -30,8 +33,13 @@ public class TallaConfiguracionController {
             if (configuracion.getProducto() == null || configuracion.getProducto().getId() == null) {
                 return ResponseEntity.badRequest().body("El producto es obligatorio");
             }
+            if (configuracion.getStock() < 0) {
+                return ResponseEntity.badRequest().body("El stock no puede ser negativo");
+            }
 
             TallaConfiguracion nuevaConfiguracion = repository.save(configuracion);
+            productoService.actualizarStockProducto(configuracion.getProducto().getId());
+
             return ResponseEntity.ok(nuevaConfiguracion);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Error al guardar la configuración: " + e.getMessage());
@@ -64,8 +72,12 @@ public class TallaConfiguracionController {
             TallaConfiguracion actualizada = existente.get();
             actualizada.setTalla(configuracion.getTalla());
             actualizada.setPrecio(configuracion.getPrecio());
+            actualizada.setStock(configuracion.getStock());
 
-            return ResponseEntity.ok(repository.save(actualizada));
+            TallaConfiguracion updated = repository.save(actualizada);
+            productoService.actualizarStockProducto(updated.getProducto().getId());
+
+            return ResponseEntity.ok(updated);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Error al actualizar: " + e.getMessage());
         }
@@ -74,13 +86,101 @@ public class TallaConfiguracionController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminarTallaConfiguracion(@PathVariable Long id) {
         try {
-            if (!repository.existsById(id)) {
+            Optional<TallaConfiguracion> configuracion = repository.findById(id);
+            if (configuracion.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
+
+            Long productoId = configuracion.get().getProducto().getId();
             repository.deleteById(id);
+            productoService.actualizarStockProducto(productoId);
+
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Error al eliminar: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/{id}/stock")
+    public ResponseEntity<?> actualizarStockTalla(
+            @PathVariable Long id,
+            @RequestParam int cantidad) {
+        try {
+            if (cantidad < 0) {
+                return ResponseEntity.badRequest().body("El stock no puede ser negativo");
+            }
+
+            Optional<TallaConfiguracion> tallaOpt = repository.findById(id);
+            if (tallaOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            TallaConfiguracion talla = tallaOpt.get();
+            talla.setStock(cantidad);
+            repository.save(talla);
+            productoService.actualizarStockProducto(talla.getProducto().getId());
+
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error al actualizar stock: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/{id}/reducir-stock")
+    public ResponseEntity<?> reducirStockTalla(
+            @PathVariable Long id,
+            @RequestParam int cantidad) {
+        try {
+            if (cantidad <= 0) {
+                return ResponseEntity.badRequest().body("La cantidad debe ser mayor que cero");
+            }
+
+            Optional<TallaConfiguracion> tallaOpt = repository.findById(id);
+            if (tallaOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            TallaConfiguracion talla = tallaOpt.get();
+            if (talla.getStock() < cantidad) {
+                return ResponseEntity.badRequest().body("Stock insuficiente");
+            }
+
+            boolean exito = productoService.reducirStock(talla.getProducto().getId(), talla.getTalla(), cantidad);
+            if (!exito) {
+                return ResponseEntity.badRequest().body("No se pudo reducir el stock");
+            }
+
+            productoService.actualizarStockProducto(talla.getProducto().getId());
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error al reducir stock: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/{id}/aumentar-stock")
+    public ResponseEntity<?> aumentarStockTalla(
+            @PathVariable Long id,
+            @RequestParam int cantidad) {
+        try {
+            if (cantidad <= 0) {
+                return ResponseEntity.badRequest().body("La cantidad debe ser mayor que cero");
+            }
+
+            Optional<TallaConfiguracion> tallaOpt = repository.findById(id);
+            if (tallaOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            TallaConfiguracion talla = tallaOpt.get();
+            boolean exito = productoService.aumentarStock(talla.getProducto().getId(), talla.getTalla(), cantidad);
+            if (!exito) {
+                return ResponseEntity.badRequest().body("No se pudo aumentar el stock");
+            }
+
+            productoService.actualizarStockProducto(talla.getProducto().getId());
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error al aumentar stock: " + e.getMessage());
         }
     }
 }

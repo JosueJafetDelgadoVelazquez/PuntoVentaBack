@@ -1,8 +1,11 @@
 package com.example.PuntoVentaBack.inventory.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 
-public class ProductoConTallasDTO {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class ProductoResponseDTO {
+    private Long id;
     private String nombre;
     private String codigoBarras;
     private String descripcion;
@@ -10,22 +13,13 @@ public class ProductoConTallasDTO {
     private String categoriaProducto;
     private String sexo;
     private Long idTallasCategoria;
-    private List<TallaPrecioStockDTO> tallas;
-
-    public static class TallaPrecioStockDTO {
-        private String talla;
-        private double precio;
-        private int stock;
-
-        public String getTalla() { return talla; }
-        public void setTalla(String talla) { this.talla = talla; }
-        public double getPrecio() { return precio; }
-        public void setPrecio(double precio) { this.precio = precio; }
-        public int getStock() { return stock; }
-        public void setStock(int stock) { this.stock = stock; }
-    }
+    private boolean habilitado;
+    private List<TallaConfiguracionDTO> tallas;
+    private Integer stock;
 
     // Getters y Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public String getNombre() { return nombre; }
     public void setNombre(String nombre) { this.nombre = nombre; }
     public String getCodigoBarras() { return codigoBarras; }
@@ -40,6 +34,10 @@ public class ProductoConTallasDTO {
     public void setSexo(String sexo) { this.sexo = sexo; }
     public Long getIdTallasCategoria() { return idTallasCategoria; }
     public void setIdTallasCategoria(Long idTallasCategoria) { this.idTallasCategoria = idTallasCategoria; }
-    public List<TallaPrecioStockDTO> getTallas() { return tallas; }
-    public void setTallas(List<TallaPrecioStockDTO> tallas) { this.tallas = tallas; }
+    public boolean isHabilitado() { return habilitado; }
+    public void setHabilitado(boolean habilitado) { this.habilitado = habilitado; }
+    public List<TallaConfiguracionDTO> getTallas() { return tallas; }
+    public void setTallas(List<TallaConfiguracionDTO> tallas) { this.tallas = tallas; }
+    public Integer getStock() { return stock; }
+    public void setStock(Integer stock) { this.stock = stock; }
 }
