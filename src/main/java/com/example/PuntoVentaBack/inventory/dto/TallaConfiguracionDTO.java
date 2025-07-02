@@ -8,6 +8,7 @@ public class TallaConfiguracionDTO {
     private String talla;
     private double precio;
     private int stock;
+    private Long productoId;  // Added reference to product
 
     // Getters y Setters
     public Long getId() { return id; }
@@ -18,4 +19,6 @@ public class TallaConfiguracionDTO {
     public void setPrecio(double precio) { this.precio = precio; }
     public int getStock() { return stock; }
     public void setStock(int stock) { this.stock = stock; }
+    public Long getProductoId() { return productoId; }
+    public void setProductoId(Long productoId) { this.productoId = productoId; }
 }

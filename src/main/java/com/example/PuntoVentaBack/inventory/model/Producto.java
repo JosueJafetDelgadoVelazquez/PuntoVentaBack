@@ -30,7 +30,6 @@ public class Producto {
 
     private String categoriaProducto;
 
-    @Column(name = "sexo")
     private String sexo;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -38,15 +37,16 @@ public class Producto {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private TallasCategoria tallasCategoria;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "boolean default true")
     private boolean habilitado = true;
 
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<TallaConfiguracion> tallasConfiguracion;
 
-    @Transient  // No se persiste, se calcula dinámicamente
-    private Integer stock;
+    // Eliminar @Transient y mapear correctamente el stock
+    @Column(nullable = false)
+    private Integer stock = 0;
 
     // Getters y Setters
     public Long getId() { return id; }
@@ -69,6 +69,11 @@ public class Producto {
     public void setHabilitado(boolean habilitado) { this.habilitado = habilitado; }
     public List<TallaConfiguracion> getTallasConfiguracion() { return tallasConfiguracion; }
     public void setTallasConfiguracion(List<TallaConfiguracion> tallasConfiguracion) { this.tallasConfiguracion = tallasConfiguracion; }
-    public Integer getStock() { return stock; }
+    public Integer getStock() {
+        if (tallasConfiguracion != null && !tallasConfiguracion.isEmpty()) {
+            return tallasConfiguracion.stream().mapToInt(TallaConfiguracion::getStock).sum();
+        }
+        return stock;
+    }
     public void setStock(Integer stock) { this.stock = stock; }
 }

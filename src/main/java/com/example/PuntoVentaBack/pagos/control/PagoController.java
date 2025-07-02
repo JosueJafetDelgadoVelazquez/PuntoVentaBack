@@ -40,38 +40,33 @@ public class PagoController {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            // Validación básica del DTO
+            // 1. Validación básica del DTO
             if (dto == null) {
-                response.put("success", false);
-                response.put("message", "El cuerpo de la petición no puede estar vacío");
-                return ResponseEntity.badRequest().body(response);
+                return buildErrorResponse(response, "El cuerpo de la petición no puede estar vacío");
             }
 
-            // Establecer método de pago por defecto si no viene
-            String metodoPago = (dto.getMetodoPago() != null && !dto.getMetodoPago().isEmpty())
-                    ? dto.getMetodoPago().toUpperCase()
-                    : "EFECTIVO";
-
-            // Validar productos
+            // 2. Validación de productos
             if (dto.getProductos() == null || dto.getProductos().isEmpty()) {
-                response.put("success", false);
-                response.put("message", "Debe incluir al menos un producto");
-                return ResponseEntity.badRequest().body(response);
+                return buildErrorResponse(response, "Debe incluir al menos un producto");
             }
 
-            // Configurar el pago
+            // 3. Validar cada producto individualmente
+            for (PagoDTO.ProductoPagoDTO productoDTO : dto.getProductos()) {
+                if (productoDTO.getProductoId() == null ||
+                        productoDTO.getTalla() == null ||
+                        productoDTO.getCantidad() <= 0) {
+                    return buildErrorResponse(response, "Datos del producto incompletos o inválidos");
+                }
+            }
+
+            // 4. Configurar el pago
             Pago pago = new Pago();
-            pago.setMetodoPago(metodoPago);
+            pago.setMetodoPago(dto.getMetodoPago() != null ? dto.getMetodoPago().toUpperCase() : "EFECTIVO");
             pago.setPermiteStockNegativo(dto.isPermiteStockNegativo() != null && dto.isPermiteStockNegativo());
             pago.setFechaHora(LocalDateTime.now());
 
-            // Procesar cada producto
+            // 5. Procesar cada producto
             List<Pedido> pedidos = dto.getProductos().stream().map(p -> {
-                // Validar producto
-                if (p.getProductoId() == null || p.getTalla() == null || p.getCantidad() <= 0) {
-                    throw new RuntimeException("Datos del producto incompletos o inválidos");
-                }
-
                 Producto producto = productoRepository.findById(p.getProductoId())
                         .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + p.getProductoId()));
 
@@ -82,19 +77,22 @@ public class PagoController {
                                 "Talla " + p.getTalla() + " no disponible para el producto: " + producto.getNombre()));
 
                 // Validar stock
-                int nuevoStock = producto.getStock() - p.getCantidad();
+                int nuevoStock = talla.getStock() - p.getCantidad();
                 if (!pago.isPermiteStockNegativo() && nuevoStock < 0) {
                     throw new RuntimeException(String.format(
                             "Stock insuficiente para %s (Talla %s). Stock actual: %d, se requieren: %d",
                             producto.getNombre(),
                             talla.getTalla(),
-                            producto.getStock(),
+                            talla.getStock(),
                             p.getCantidad()));
                 }
 
-                // Actualizar stock
-                producto.setStock(nuevoStock);
-                productoRepository.save(producto);
+                // Actualizar stock de la talla específica
+                talla.setStock(nuevoStock);
+                tallaConfiguracionRepository.save(talla);
+
+                // Actualizar stock general del producto
+                actualizarStockProducto(producto);
 
                 // Crear pedido
                 Pedido pedido = new Pedido();
@@ -102,40 +100,56 @@ public class PagoController {
                 pedido.setTallaConfiguracion(talla);
                 pedido.setNombreProducto(producto.getNombre());
                 pedido.setCantidad(p.getCantidad());
-                pedido.setPagoProducto(p.getCantidad() * talla.getPrecio());
+                pedido.setPagoProducto(p.getCantidad() * p.getPrecio());
                 pedido.setTalla(talla.getTalla());
                 pedido.setPago(pago);
 
                 return pedido;
             }).collect(Collectors.toList());
 
-            // Calcular total
-            double total = pedidos.stream()
-                    .mapToDouble(Pedido::getPagoProducto)
-                    .sum();
+            // 6. Calcular total (usamos el total del DTO o calculamos)
+            double total = dto.getTotal() > 0 ? dto.getTotal() :
+                    pedidos.stream()
+                            .mapToDouble(Pedido::getPagoProducto)
+                            .sum();
             pago.setTotalPagado(total);
 
-            // Guardar en base de datos
+            // 7. Guardar en base de datos
             Pago pagoGuardado = pagoRepository.save(pago);
             pedidoRepository.saveAll(pedidos);
 
-            // Preparar respuesta exitosa
-            response.put("success", true);
-            response.put("message", "Pago registrado exitosamente");
-            response.put("data", pagoGuardado);
-            return ResponseEntity.ok(response);
+            // 8. Preparar respuesta exitosa
+            return buildSuccessResponse(response, pagoGuardado);
 
         } catch (RuntimeException e) {
-            // Errores de negocio conocidos
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return buildErrorResponse(response, e.getMessage());
         } catch (Exception e) {
-            // Errores inesperados
-            response.put("success", false);
-            response.put("message", "Error interno al procesar el pago");
-            return ResponseEntity.internalServerError().body(response);
+            return buildErrorResponse(response, "Error interno al procesar el pago");
         }
+    }
+
+    private void actualizarStockProducto(Producto producto) {
+        if (producto.getTallasConfiguracion() != null) {
+            int stockTotal = producto.getTallasConfiguracion()
+                    .stream()
+                    .mapToInt(TallaConfiguracion::getStock)
+                    .sum();
+            producto.setStock(stockTotal);
+            productoRepository.save(producto);
+        }
+    }
+
+    private ResponseEntity<Map<String, Object>> buildErrorResponse(Map<String, Object> response, String message) {
+        response.put("success", false);
+        response.put("message", message);
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    private ResponseEntity<Map<String, Object>> buildSuccessResponse(Map<String, Object> response, Pago pago) {
+        response.put("success", true);
+        response.put("message", "Pago registrado exitosamente");
+        response.put("data", pago);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping

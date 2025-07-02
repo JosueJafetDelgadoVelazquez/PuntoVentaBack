@@ -13,6 +13,7 @@ public class ProductoResponseDTO {
     private String categoriaProducto;
     private String sexo;
     private Long idTallasCategoria;
+    private String nombreTallasCategoria;
     private boolean habilitado;
     private List<TallaConfiguracionDTO> tallas;
     private Integer stock;
@@ -34,6 +35,8 @@ public class ProductoResponseDTO {
     public void setSexo(String sexo) { this.sexo = sexo; }
     public Long getIdTallasCategoria() { return idTallasCategoria; }
     public void setIdTallasCategoria(Long idTallasCategoria) { this.idTallasCategoria = idTallasCategoria; }
+    public String getNombreTallasCategoria() { return nombreTallasCategoria; }
+    public void setNombreTallasCategoria(String nombreTallasCategoria) { this.nombreTallasCategoria = nombreTallasCategoria; }
     public boolean isHabilitado() { return habilitado; }
     public void setHabilitado(boolean habilitado) { this.habilitado = habilitado; }
     public List<TallaConfiguracionDTO> getTallas() { return tallas; }

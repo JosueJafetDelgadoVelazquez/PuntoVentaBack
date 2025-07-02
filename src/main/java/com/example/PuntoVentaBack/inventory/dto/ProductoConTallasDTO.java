@@ -13,10 +13,14 @@ public class ProductoConTallasDTO {
     private List<TallaPrecioStockDTO> tallas;
 
     public static class TallaPrecioStockDTO {
+        private Long id;  // Added ID field
         private String talla;
         private double precio;
         private int stock;
 
+        // Getters and Setters
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
         public String getTalla() { return talla; }
         public void setTalla(String talla) { this.talla = talla; }
         public double getPrecio() { return precio; }

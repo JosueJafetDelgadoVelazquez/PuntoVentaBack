@@ -7,8 +7,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tallas-configuracion")
@@ -50,12 +54,28 @@ public class TallaConfiguracionController {
     public ResponseEntity<?> obtenerTallasPorProducto(@PathVariable Long productoId) {
         try {
             List<TallaConfiguracion> tallas = repository.findByProductoId(productoId);
-            if (tallas.isEmpty()) {
-                return ResponseEntity.noContent().build();
+
+            if (tallas == null || tallas.isEmpty()) {
+                return ResponseEntity.ok(Collections.emptyList());
             }
-            return ResponseEntity.ok(tallas);
+
+            // Convertir a lista de mapas para una respuesta más limpia
+            List<Map<String, Object>> response = tallas.stream()
+                    .map(t -> {
+                        Map<String, Object> tallaMap = new HashMap<>();
+                        tallaMap.put("id", t.getId());
+                        tallaMap.put("talla", t.getTalla());
+                        tallaMap.put("precio", t.getPrecio());
+                        tallaMap.put("stock", t.getStock());
+                        return tallaMap;
+                    })
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error al obtener tallas: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body("Error al obtener tallas: " + e.getMessage());
         }
     }
 

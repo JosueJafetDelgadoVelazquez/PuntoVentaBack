@@ -9,7 +9,6 @@ import com.example.PuntoVentaBack.inventory.model.ProductoRepository;
 import com.example.PuntoVentaBack.inventory.dto.ProductoConTallasDTO;
 import com.example.PuntoVentaBack.inventory.dto.ProductoResponseDTO;
 import com.example.PuntoVentaBack.inventory.dto.TallaConfiguracionDTO;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +19,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/productos")
+@RequestMapping("/api")
 public class ProductoController {
 
     @Autowired
@@ -32,10 +31,17 @@ public class ProductoController {
     @Autowired
     private TallaConfiguracionRepository tallaConfiguracionRepository;
 
-    @Autowired
-    private ProductoService productoService;
+    @GetMapping("/tallas-categoria")
+    public ResponseEntity<List<TallasCategoria>> obtenerTodasTallasCategoria() {
+        try {
+            List<TallasCategoria> categorias = tallasCategoriaRepository.findAll();
+            return ResponseEntity.ok(categorias);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Collections.emptyList());
+        }
+    }
 
-    @GetMapping
+    @GetMapping("/productos")
     public ResponseEntity<List<ProductoResponseDTO>> obtenerTodosProductos() {
         try {
             List<Producto> productos = productoRepository.findAll();
@@ -53,10 +59,14 @@ public class ProductoController {
 
                 if(producto.getTallasCategoria() != null) {
                     dto.setIdTallasCategoria(producto.getTallasCategoria().getId());
+                    dto.setNombreTallasCategoria(producto.getTallasCategoria().getNombre());
                 }
 
-                if(producto.getTallasConfiguracion() != null && !producto.getTallasConfiguracion().isEmpty()) {
-                    List<TallaConfiguracionDTO> tallasDTO = producto.getTallasConfiguracion().stream()
+                // Fetch sizes directly from repository to ensure we get all sizes
+                List<TallaConfiguracion> tallasConfig = tallaConfiguracionRepository.findByProductoId(producto.getId());
+
+                if(tallasConfig != null && !tallasConfig.isEmpty()) {
+                    List<TallaConfiguracionDTO> tallasDTO = tallasConfig.stream()
                             .map(t -> {
                                 TallaConfiguracionDTO tallaDTO = new TallaConfiguracionDTO();
                                 tallaDTO.setId(t.getId());
@@ -82,9 +92,13 @@ public class ProductoController {
     }
 
     @GetMapping("/tallas-configuracion/producto/{id}")
-    public ResponseEntity<List<TallaConfiguracionDTO>> obtenerTallasPorProducto(@PathVariable Long id) {
+    public ResponseEntity<?> obtenerTallasPorProducto(@PathVariable Long id) {
         try {
             List<TallaConfiguracion> tallas = tallaConfiguracionRepository.findByProductoId(id);
+
+            if (tallas == null || tallas.isEmpty()) {
+                return ResponseEntity.ok(Collections.emptyList());
+            }
 
             List<TallaConfiguracionDTO> response = tallas.stream()
                     .map(t -> {
@@ -99,12 +113,14 @@ public class ProductoController {
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Collections.emptyList());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body("Error al obtener tallas: " + e.getMessage());
         }
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ProductoResponseDTO> obtenerProductoPorId(@PathVariable Long id) {
+    @GetMapping("/productos/{id}")
+    public ResponseEntity<?> obtenerProductoPorId(@PathVariable Long id) {
         try {
             Optional<Producto> producto = productoRepository.findById(id);
             if (producto.isEmpty()) {
@@ -124,10 +140,14 @@ public class ProductoController {
 
             if(p.getTallasCategoria() != null) {
                 response.setIdTallasCategoria(p.getTallasCategoria().getId());
+                response.setNombreTallasCategoria(p.getTallasCategoria().getNombre());
             }
 
-            if(p.getTallasConfiguracion() != null && !p.getTallasConfiguracion().isEmpty()) {
-                List<TallaConfiguracionDTO> tallasDTO = p.getTallasConfiguracion().stream()
+            // Fetch sizes directly from repository
+            List<TallaConfiguracion> tallasConfig = tallaConfiguracionRepository.findByProductoId(p.getId());
+
+            if(tallasConfig != null && !tallasConfig.isEmpty()) {
+                List<TallaConfiguracionDTO> tallasDTO = tallasConfig.stream()
                         .map(t -> {
                             TallaConfiguracionDTO dto = new TallaConfiguracionDTO();
                             dto.setId(t.getId());
@@ -145,11 +165,13 @@ public class ProductoController {
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body("Error al obtener producto: " + e.getMessage());
         }
     }
 
-    @PostMapping
+    @PostMapping("/productos")
     public ResponseEntity<?> crearProducto(@RequestBody ProductoConTallasDTO dto) {
         try {
             if (dto.getNombre() == null || dto.getNombre().isEmpty()) {
@@ -194,12 +216,13 @@ public class ProductoController {
 
             return ResponseEntity.ok(convertToResponseDTO(productoGuardado));
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.internalServerError()
                     .body("Error al crear producto: " + e.getMessage());
         }
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/productos/{id}")
     public ResponseEntity<?> actualizarProducto(@PathVariable Long id, @RequestBody ProductoConTallasDTO dto) {
         try {
             if (dto.getNombre() == null || dto.getNombre().isEmpty()) {
@@ -232,8 +255,8 @@ public class ProductoController {
 
             Producto productoActualizado = productoRepository.save(producto);
 
-            List<TallaConfiguracion> tallasExistentes = tallaConfiguracionRepository.findByProductoId(id);
-            tallaConfiguracionRepository.deleteAll(tallasExistentes);
+            // Eliminar tallas existentes y crear nuevas
+            tallaConfiguracionRepository.deleteByProductoId(id);
 
             if (dto.getTallas() != null && !dto.getTallas().isEmpty()) {
                 for (ProductoConTallasDTO.TallaPrecioStockDTO t : dto.getTallas()) {
@@ -253,31 +276,34 @@ public class ProductoController {
 
             return ResponseEntity.ok(convertToResponseDTO(productoActualizado));
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.internalServerError()
                     .body("Error al actualizar producto: " + e.getMessage());
         }
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/productos/{id}")
     public ResponseEntity<?> eliminarProducto(@PathVariable Long id) {
         try {
             if (!productoRepository.existsById(id)) {
                 return ResponseEntity.notFound().build();
             }
 
-            List<TallaConfiguracion> tallas = tallaConfiguracionRepository.findByProductoId(id);
-            tallaConfiguracionRepository.deleteAll(tallas);
+            // Eliminar primero las tallas asociadas
+            tallaConfiguracionRepository.deleteByProductoId(id);
 
+            // Luego eliminar el producto
             productoRepository.deleteById(id);
 
             return ResponseEntity.ok().body("Producto eliminado correctamente");
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.internalServerError()
                     .body("Error al eliminar producto: " + e.getMessage());
         }
     }
 
-    @PatchMapping("/{id}/habilitar")
+    @PatchMapping("/productos/{id}/habilitar")
     public ResponseEntity<?> habilitarProducto(@PathVariable Long id) {
         try {
             Optional<Producto> optionalProducto = productoRepository.findById(id);
@@ -289,12 +315,13 @@ public class ProductoController {
             productoRepository.save(producto);
             return ResponseEntity.ok("Producto habilitado correctamente");
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.internalServerError()
                     .body("Error al habilitar producto: " + e.getMessage());
         }
     }
 
-    @PatchMapping("/{id}/deshabilitar")
+    @PatchMapping("/productos/{id}/deshabilitar")
     public ResponseEntity<?> deshabilitarProducto(@PathVariable Long id) {
         try {
             Optional<Producto> optionalProducto = productoRepository.findById(id);
@@ -306,6 +333,7 @@ public class ProductoController {
             productoRepository.save(producto);
             return ResponseEntity.ok("Producto deshabilitado correctamente");
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.internalServerError()
                     .body("Error al deshabilitar producto: " + e.getMessage());
         }
@@ -324,10 +352,14 @@ public class ProductoController {
 
         if(producto.getTallasCategoria() != null) {
             dto.setIdTallasCategoria(producto.getTallasCategoria().getId());
+            dto.setNombreTallasCategoria(producto.getTallasCategoria().getNombre());
         }
 
-        if(producto.getTallasConfiguracion() != null && !producto.getTallasConfiguracion().isEmpty()) {
-            List<TallaConfiguracionDTO> tallasDTO = producto.getTallasConfiguracion().stream()
+        // Fetch sizes directly from repository
+        List<TallaConfiguracion> tallasConfig = tallaConfiguracionRepository.findByProductoId(producto.getId());
+
+        if(tallasConfig != null && !tallasConfig.isEmpty()) {
+            List<TallaConfiguracionDTO> tallasDTO = tallasConfig.stream()
                     .map(t -> {
                         TallaConfiguracionDTO tallaDTO = new TallaConfiguracionDTO();
                         tallaDTO.setId(t.getId());
