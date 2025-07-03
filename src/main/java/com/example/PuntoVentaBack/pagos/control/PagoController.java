@@ -97,7 +97,6 @@ public class PagoController {
                 // Crear pedido
                 Pedido pedido = new Pedido();
                 pedido.setProducto(producto);
-                pedido.setTallaConfiguracion(talla);
                 pedido.setNombreProducto(producto.getNombre());
                 pedido.setCantidad(p.getCantidad());
                 pedido.setPagoProducto(p.getCantidad() * p.getPrecio());

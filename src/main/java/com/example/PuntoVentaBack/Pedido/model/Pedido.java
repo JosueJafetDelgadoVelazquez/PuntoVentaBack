@@ -1,6 +1,5 @@
 package com.example.PuntoVentaBack.Pedido.model;
 
-import com.example.PuntoVentaBack.TallasConfiguracion.model.TallaConfiguracion;
 import com.example.PuntoVentaBack.inventory.model.Producto;
 import com.example.PuntoVentaBack.pagos.model.Pago;
 import jakarta.persistence.*;
@@ -19,7 +18,7 @@ public class Pedido {
 
     private double pagoProducto;
 
-    private String talla; // NUEVO CAMPO
+    private String talla; // Campo independiente
 
     @ManyToOne
     @JoinColumn(name = "id_pago")
@@ -28,10 +27,6 @@ public class Pedido {
     @ManyToOne
     @JoinColumn(name = "id_producto")
     private Producto producto;
-
-    @ManyToOne
-    @JoinColumn(name = "id_talla_configuracion")
-    private TallaConfiguracion tallaConfiguracion;
 
     // Getters y Setters
 
@@ -54,7 +49,4 @@ public class Pedido {
 
     public Producto getProducto() { return producto; }
     public void setProducto(Producto producto) { this.producto = producto; }
-
-    public TallaConfiguracion getTallaConfiguracion() { return tallaConfiguracion; }
-    public void setTallaConfiguracion(TallaConfiguracion tallaConfiguracion) { this.tallaConfiguracion = tallaConfiguracion; }
 }

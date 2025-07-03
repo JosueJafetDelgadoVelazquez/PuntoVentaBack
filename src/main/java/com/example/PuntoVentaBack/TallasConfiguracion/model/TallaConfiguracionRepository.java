@@ -8,43 +8,71 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface TallaConfiguracionRepository extends JpaRepository<TallaConfiguracion, Long> {
 
-    // Método para verificar existencia de talla por producto y nombre de talla
+    // Verifica si existe una talla para un producto específico
     boolean existsByProductoIdAndTalla(Long productoId, String talla);
 
-    // Método para buscar configuración de talla por producto y talla
+    // Busca una talla específica por producto y nombre de talla
     @Query("SELECT t FROM TallaConfiguracion t WHERE t.producto.id = :productoId AND t.talla = :talla")
     Optional<TallaConfiguracion> findByProductoIdAndTalla(@Param("productoId") Long productoId, @Param("talla") String talla);
 
-    // Método para obtener todas las configuraciones de talla de un producto
-    List<TallaConfiguracion> findByProductoId(Long productoId);
+    // Obtiene todas las tallas de un producto
+    @Query("SELECT t FROM TallaConfiguracion t WHERE t.producto.id = :productoId ORDER BY t.talla")
+    List<TallaConfiguracion> findByProductoId(@Param("productoId") Long productoId);
 
-    // Método para sumar el stock total de todas las tallas de un producto
+    // Suma el stock total de todas las tallas de un producto
     @Query("SELECT COALESCE(SUM(t.stock), 0) FROM TallaConfiguracion t WHERE t.producto.id = :productoId")
     int sumStockByProductoId(@Param("productoId") Long productoId);
 
-    // Método para reducir stock con validación
+    // Reduce el stock con validación de stock suficiente
     @Modifying
     @Transactional
     @Query("UPDATE TallaConfiguracion t SET t.stock = t.stock - :cantidad " +
-            "WHERE t.producto.id = :productoId AND t.talla = :talla AND t.stock >= :cantidad")
-    int reducirStock(@Param("productoId") Long productoId, @Param("talla") String talla, @Param("cantidad") int cantidad);
+            "WHERE t.id = :id AND t.stock >= :cantidad")
+    int reducirStockPorId(@Param("id") Long id, @Param("cantidad") int cantidad);
 
-    // Método para aumentar stock
+    // Aumenta el stock de una talla específica
     @Modifying
     @Transactional
     @Query("UPDATE TallaConfiguracion t SET t.stock = t.stock + :cantidad " +
-            "WHERE t.producto.id = :productoId AND t.talla = :talla")
-    int aumentarStock(@Param("productoId") Long productoId, @Param("talla") String talla, @Param("cantidad") int cantidad);
+            "WHERE t.id = :id")
+    int aumentarStockPorId(@Param("id") Long id, @Param("cantidad") int cantidad);
 
-    // Método para eliminar todas las tallas de un producto
+    // Elimina todas las tallas de un producto
     @Modifying
     @Transactional
     @Query("DELETE FROM TallaConfiguracion t WHERE t.producto.id = :productoId")
     void deleteByProductoId(@Param("productoId") Long productoId);
 
-    // Método para buscar por ID de talla
-    Optional<TallaConfiguracion> findById(Long id);
+    // Busca por ID de talla
+    @Query("SELECT t FROM TallaConfiguracion t WHERE t.id = :id")
+    Optional<TallaConfiguracion> findById(@Param("id") Long id);
+
+    // Método para buscar tallas por producto y lista de nombres de talla
+    @Query("SELECT t FROM TallaConfiguracion t WHERE t.producto.id = :productoId AND t.talla IN :tallas")
+    List<TallaConfiguracion> findByProductoIdAndTallaIn(@Param("productoId") Long productoId,
+                                                        @Param("tallas") List<String> tallas);
+
+    // Método para actualizar precio de una talla
+    @Modifying
+    @Transactional
+    @Query("UPDATE TallaConfiguracion t SET t.precio = :precio WHERE t.id = :id")
+    int actualizarPrecio(@Param("id") Long id, @Param("precio") double precio);
+
+    // Método para actualizar múltiples tallas en una sola operación
+    @Modifying
+    @Transactional
+    @Query("UPDATE TallaConfiguracion t SET t.precio = :precio, t.stock = :stock " +
+            "WHERE t.id = :id")
+    int actualizarTallaCompleta(@Param("id") Long id,
+                                @Param("precio") double precio,
+                                @Param("stock") int stock);
+
+    // Método para obtener tallas con stock bajo
+    @Query("SELECT t FROM TallaConfiguracion t WHERE t.producto.id = :productoId AND t.stock <= :umbral")
+    List<TallaConfiguracion> findTallasConStockBajo(@Param("productoId") Long productoId,
+                                                    @Param("umbral") int umbral);
 }
