@@ -120,4 +120,10 @@ public class ProductoService {
             actualizarStockProducto(productoId);
         }
     }
+
+    @Transactional
+    public void guardarTallaConfiguracion(TallaConfiguracion tallaConfig) {
+        tallaConfiguracionRepository.save(tallaConfig);
+        actualizarStockProducto(tallaConfig.getProducto().getId());
+    }
 }

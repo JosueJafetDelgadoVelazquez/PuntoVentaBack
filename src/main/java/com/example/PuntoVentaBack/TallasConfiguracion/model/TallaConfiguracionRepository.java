@@ -30,9 +30,9 @@ public interface TallaConfiguracionRepository extends JpaRepository<TallaConfigu
     // Reduce el stock con validación de stock suficiente
     @Modifying
     @Transactional
-    @Query("UPDATE TallaConfiguracion t SET t.stock = t.stock - :cantidad " +
-            "WHERE t.id = :id AND t.stock >= :cantidad")
+    @Query("UPDATE TallaConfiguracion t SET t.stock = t.stock - :cantidad WHERE t.id = :id")
     int reducirStockPorId(@Param("id") Long id, @Param("cantidad") int cantidad);
+
 
     // Aumenta el stock de una talla específica
     @Modifying

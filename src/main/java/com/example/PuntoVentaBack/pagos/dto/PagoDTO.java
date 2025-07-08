@@ -1,24 +1,25 @@
 package com.example.PuntoVentaBack.pagos.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.math.BigDecimal;
 import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PagoDTO {
     private String metodoPago;
-    private double total;
+    private BigDecimal total = BigDecimal.ZERO;
     private Boolean permiteStockNegativo;
-    private Double montoRecibido;  // Nuevo campo para pago en efectivo
-    private Double cambio;         // Nuevo campo para pago en efectivo
+    private BigDecimal montoRecibido;  // Cambiado a BigDecimal
+    private BigDecimal cambio;         // Cambiado a BigDecimal
     private List<ProductoPagoDTO> productos;
 
     public static class ProductoPagoDTO {
         private Long productoId;
-        private Long tallaId;      // Nuevo campo para ID de talla
-        private String talla;      // Mantenido para compatibilidad
+        private Long tallaId;
+        private String talla;
         private int cantidad;
-        private double precio;
-        private String nombreProducto; // Nuevo campo para registro
+        private BigDecimal precio;     // Cambiado a BigDecimal
+        private String nombreProducto;
 
         // Getters y Setters
         public Long getProductoId() { return productoId; }
@@ -33,8 +34,8 @@ public class PagoDTO {
         public int getCantidad() { return cantidad; }
         public void setCantidad(int cantidad) { this.cantidad = cantidad; }
 
-        public double getPrecio() { return precio; }
-        public void setPrecio(double precio) { this.precio = precio; }
+        public BigDecimal getPrecio() { return precio; }
+        public void setPrecio(BigDecimal precio) { this.precio = precio; }
 
         public String getNombreProducto() { return nombreProducto; }
         public void setNombreProducto(String nombreProducto) { this.nombreProducto = nombreProducto; }
@@ -44,19 +45,19 @@ public class PagoDTO {
     public String getMetodoPago() { return metodoPago; }
     public void setMetodoPago(String metodoPago) { this.metodoPago = metodoPago; }
 
-    public double getTotal() { return total; }
-    public void setTotal(double total) { this.total = total; }
+    public BigDecimal getTotal() { return total; }
+    public void setTotal(BigDecimal total) { this.total = total; }
 
     public Boolean isPermiteStockNegativo() { return permiteStockNegativo; }
     public void setPermiteStockNegativo(Boolean permiteStockNegativo) {
         this.permiteStockNegativo = permiteStockNegativo;
     }
 
-    public Double getMontoRecibido() { return montoRecibido; }
-    public void setMontoRecibido(Double montoRecibido) { this.montoRecibido = montoRecibido; }
+    public BigDecimal getMontoRecibido() { return montoRecibido; }
+    public void setMontoRecibido(BigDecimal montoRecibido) { this.montoRecibido = montoRecibido; }
 
-    public Double getCambio() { return cambio; }
-    public void setCambio(Double cambio) { this.cambio = cambio; }
+    public BigDecimal getCambio() { return cambio; }
+    public void setCambio(BigDecimal cambio) { this.cambio = cambio; }
 
     public List<ProductoPagoDTO> getProductos() { return productos; }
     public void setProductos(List<ProductoPagoDTO> productos) { this.productos = productos; }

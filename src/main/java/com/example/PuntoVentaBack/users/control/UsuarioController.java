@@ -1,8 +1,6 @@
 package com.example.PuntoVentaBack.users.control;
 
 import com.example.PuntoVentaBack.users.model.Usuario;
-import com.example.PuntoVentaBack.users.control.UsuarioService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,80 +12,97 @@ public class UsuarioController {
 
     private final UsuarioService usuarioService;
 
-    @Autowired
     public UsuarioController(UsuarioService usuarioService) {
         this.usuarioService = usuarioService;
     }
 
     @GetMapping
-    public List<Usuario> getAllUsuarios() {
-        return usuarioService.findAll();
+    public List<Usuario> obtenerTodosUsuarios() {
+        return usuarioService.obtenerTodos();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Usuario> getUsuarioById(@PathVariable Long id) {
-        return usuarioService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<Usuario> obtenerUsuarioPorId(@PathVariable Long id) {
+        try {
+            Usuario usuario = usuarioService.obtenerUsuarioPorId(id);
+            return ResponseEntity.ok(usuario);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping
-    public Usuario createUsuario(@RequestBody Usuario usuario) {
-        // Por defecto, nuevos usuarios están habilitados
+    public Usuario crearUsuario(@RequestBody Usuario usuario) {
         usuario.setHabilitado(true);
-        return usuarioService.save(usuario);
+        return usuarioService.guardar(usuario);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Usuario> updateUsuario(@PathVariable Long id, @RequestBody Usuario usuarioDetails) {
-        return usuarioService.findById(id)
-                .map(usuario -> {
-                    usuario.setNombre(usuarioDetails.getNombre());
-                    usuario.setCorreo(usuarioDetails.getCorreo());
+    public ResponseEntity<Usuario> actualizarUsuario(@PathVariable Long id, @RequestBody Usuario usuarioDetails) {
+        try {
+            Usuario usuario = usuarioService.obtenerUsuarioPorId(id);
 
-                    // ✅ Solo actualizar contraseña si viene no vacía
-                    if (usuarioDetails.getContraseña() != null && !usuarioDetails.getContraseña().isEmpty()) {
-                        usuario.setContraseña(usuarioDetails.getContraseña());
-                    }
+            if (usuarioDetails.getNombre() != null) {
+                usuario.setNombre(usuarioDetails.getNombre());
+            }
+            if (usuarioDetails.getCorreo() != null) {
+                usuario.setCorreo(usuarioDetails.getCorreo());
+            }
+            if (usuarioDetails.getContraseña() != null && !usuarioDetails.getContraseña().isEmpty()) {
+                usuario.setContraseña(usuarioDetails.getContraseña());
+            }
+            if (usuarioDetails.getRol() != null) {
+                usuario.setRol(usuarioDetails.getRol());
+            }
 
-                    usuario.setRol(usuarioDetails.getRol());
-                    return ResponseEntity.ok(usuarioService.save(usuario));
-                })
-                .orElse(ResponseEntity.notFound().build());
+            return ResponseEntity.ok(usuarioService.guardar(usuario));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUsuario(@PathVariable Long id) {
-        if (usuarioService.findById(id).isEmpty()) {
+    public ResponseEntity<Void> eliminarUsuario(@PathVariable Long id) {
+        try {
+            usuarioService.eliminarPorId(id);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
-        usuarioService.deleteById(id);
-        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/correo/{correo}")
-    public ResponseEntity<Usuario> getUsuarioByCorreo(@PathVariable String correo) {
-        return usuarioService.findByCorreo(correo)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<Usuario> obtenerUsuarioPorCorreo(@PathVariable String correo) {
+        try {
+            Usuario usuario = usuarioService.obtenerUsuarioPorCorreo(correo);
+            return ResponseEntity.ok(usuario);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PatchMapping("/{id}/habilitar")
     public ResponseEntity<Usuario> habilitarUsuario(@PathVariable Long id) {
-        return usuarioService.habilitarUsuario(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        try {
+            Usuario usuario = usuarioService.habilitarUsuario(id);
+            return ResponseEntity.ok(usuario);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PatchMapping("/{id}/deshabilitar")
     public ResponseEntity<Usuario> deshabilitarUsuario(@PathVariable Long id) {
-        return usuarioService.deshabilitarUsuario(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        try {
+            Usuario usuario = usuarioService.deshabilitarUsuario(id);
+            return ResponseEntity.ok(usuario);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/estado/{habilitado}")
-    public List<Usuario> getUsuariosPorEstado(@PathVariable boolean habilitado) {
-        return usuarioService.findByHabilitado(habilitado);
+    public List<Usuario> obtenerUsuariosPorEstado(@PathVariable boolean habilitado) {
+        return usuarioService.buscarPorEstado(habilitado);
     }
 }
