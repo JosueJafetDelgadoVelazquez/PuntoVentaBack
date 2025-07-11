@@ -33,17 +33,6 @@ public class Pedido {
     @JoinColumn(name = "id_producto", nullable = false)
     private Producto producto;
 
-    public Pedido() {
-    }
-
-    public Pedido(String nombreProducto, int cantidad, BigDecimal pagoProducto, Pago pago, Producto producto) {
-        this.nombreProducto = nombreProducto;
-        this.cantidad = cantidad;
-        this.pagoProducto = pagoProducto;
-        this.pago = pago;
-        this.producto = producto;
-    }
-
     // Getters y setters
     public Long getId() {
         return id;

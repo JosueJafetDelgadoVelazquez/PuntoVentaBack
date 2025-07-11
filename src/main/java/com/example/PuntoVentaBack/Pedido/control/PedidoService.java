@@ -1,5 +1,6 @@
 package com.example.PuntoVentaBack.Pedido.control;
 
+import com.example.PuntoVentaBack.Pedido.dto.VentasPorProductoDTO;
 import com.example.PuntoVentaBack.Pedido.model.Pedido;
 import com.example.PuntoVentaBack.Pedido.model.PedidoRepository;
 import com.example.PuntoVentaBack.Pedido.dto.ProductoPedidoDTO;
@@ -11,6 +12,8 @@ import com.example.PuntoVentaBack.pagos.model.Pago;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,23 +33,19 @@ public class PedidoService {
         this.productoService = productoService;
     }
 
-    @Transactional(readOnly = true)
     public Pedido obtenerPedidoPorId(Long id) {
         return pedidoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Pedido no encontrado con ID: " + id));
     }
 
-    @Transactional(readOnly = true)
     public List<Pedido> obtenerPedidosPorPago(Long pagoId) {
         return pedidoRepository.findByPagoId(pagoId);
     }
 
-    @Transactional(readOnly = true)
     public List<Pedido> obtenerPedidosPorProducto(Long productoId) {
         return pedidoRepository.findByProductoId(productoId);
     }
 
-    @Transactional
     public Pedido crearPedido(Pedido pedido) {
         if (pedido.getId() != null && pedidoRepository.existsById(pedido.getId())) {
             throw new RuntimeException("El pedido ya existe con ID: " + pedido.getId());
@@ -54,7 +53,6 @@ public class PedidoService {
         return pedidoRepository.save(pedido);
     }
 
-    @Transactional
     public Pedido actualizarPedido(Long id, Pedido pedido) {
         if (!pedidoRepository.existsById(id)) {
             throw new RuntimeException("Pedido no encontrado con ID: " + id);
@@ -63,7 +61,6 @@ public class PedidoService {
         return pedidoRepository.save(pedido);
     }
 
-    @Transactional
     public void eliminarPedido(Long id) {
         if (!pedidoRepository.existsById(id)) {
             throw new RuntimeException("Pedido no encontrado con ID: " + id);
@@ -71,12 +68,10 @@ public class PedidoService {
         pedidoRepository.deleteById(id);
     }
 
-    @Transactional(readOnly = true)
     public boolean existePedido(Long id) {
         return pedidoRepository.existsById(id);
     }
 
-    @Transactional
     public List<Pedido> registrarPedidosMultiple(Long pagoId, List<ProductoPedidoDTO> productosDTO) {
         Pago pago = pagoService.obtenerPagoPorId(pagoId)
                 .orElseThrow(() -> new RuntimeException("Pago no encontrado con ID: " + pagoId));
@@ -87,19 +82,14 @@ public class PedidoService {
             Producto producto = productoService.obtenerProductoPorId(productoDTO.getProductoId())
                     .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + productoDTO.getProductoId()));
 
-            // Buscar la talla correspondiente
             TallaConfiguracion tallaConfig = producto.getTallasConfiguracion().stream()
                     .filter(tc -> tc.getTalla().equalsIgnoreCase(productoDTO.getTalla()))
                     .findFirst()
                     .orElseThrow(() -> new RuntimeException("Talla '" + productoDTO.getTalla() + "' no encontrada para el producto."));
 
-            // Eliminada la validación de stock - siempre permite actualizar
             tallaConfig.setStock(tallaConfig.getStock() - productoDTO.getCantidad());
-
-            // Guardar cambio de stock
             productoService.guardarTallaConfiguracion(tallaConfig);
 
-            // Crear el pedido
             Pedido pedido = new Pedido();
             pedido.setNombreProducto(productoDTO.getNombreProducto());
             pedido.setCantidad(productoDTO.getCantidad());
@@ -112,5 +102,25 @@ public class PedidoService {
         }
 
         return pedidos;
+    }
+
+    @Transactional(readOnly = true)
+    public List<VentasPorProductoDTO> obtenerVentasPorProducto(LocalDateTime fechaInicio, LocalDateTime fechaFin) {
+        List<Object[]> results = pedidoRepository.findVentasAgrupadasPorProducto(fechaInicio, fechaFin);
+        List<VentasPorProductoDTO> ventas = new ArrayList<>();
+
+        for (Object[] result : results) {
+            VentasPorProductoDTO dto = new VentasPorProductoDTO(
+                    (Long) result[0],         // productoId
+                    (String) result[1],       // nombreProducto
+                    (String) result[2],       // talla
+                    ((Number) result[3]).intValue(),  // cantidadVendida
+                    (BigDecimal) result[4],   // totalVendido
+                    (LocalDateTime) result[5] // fecha
+            );
+            ventas.add(dto);
+        }
+
+        return ventas;
     }
 }

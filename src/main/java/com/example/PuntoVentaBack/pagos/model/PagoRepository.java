@@ -17,7 +17,8 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     @Query("SELECT COUNT(p) FROM Pago p WHERE p.metodoPago = :metodo")
     long countByMetodoPago(@Param("metodo") String metodoPago);
 
-    @Query("SELECT p FROM Pago p WHERE p.fechaHora BETWEEN :fechaInicio AND :fechaFin")
-    List<Pago> findByFechaHoraBetween(@Param("fechaInicio") LocalDateTime fechaInicio,
-                                      @Param("fechaFin") LocalDateTime fechaFin);
+    @Query("SELECT p FROM Pago p WHERE p.fechaHora BETWEEN :fechaInicio AND :fechaFin ORDER BY p.fechaHora ASC")
+    List<Pago> findByFechaHoraBetween(
+            @Param("fechaInicio") LocalDateTime fechaInicio,
+            @Param("fechaFin") LocalDateTime fechaFin);
 }

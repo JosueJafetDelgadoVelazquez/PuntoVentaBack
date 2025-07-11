@@ -1,11 +1,13 @@
 package com.example.PuntoVentaBack.Pedido.control;
 
+import com.example.PuntoVentaBack.Pedido.dto.VentasPorProductoDTO;
 import com.example.PuntoVentaBack.Pedido.model.Pedido;
 import com.example.PuntoVentaBack.Pedido.dto.RegistroMultiplePedidosDTO;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -44,14 +46,20 @@ public class PedidoController {
 
     @GetMapping("/por-pago/{pagoId}")
     public ResponseEntity<List<Pedido>> obtenerPedidosPorPago(@PathVariable Long pagoId) {
-        List<Pedido> pedidos = pedidoService.obtenerPedidosPorPago(pagoId);
-        return ResponseEntity.ok(pedidos);
+        return ResponseEntity.ok(pedidoService.obtenerPedidosPorPago(pagoId));
     }
 
     @GetMapping("/por-producto/{productoId}")
     public ResponseEntity<List<Pedido>> obtenerPedidosPorProducto(@PathVariable Long productoId) {
-        List<Pedido> pedidos = pedidoService.obtenerPedidosPorProducto(productoId);
-        return ResponseEntity.ok(pedidos);
+        return ResponseEntity.ok(pedidoService.obtenerPedidosPorProducto(productoId));
+    }
+
+    @GetMapping("/reporte/ventas-producto")
+    public ResponseEntity<List<VentasPorProductoDTO>> obtenerVentasPorProducto(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaInicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaFin) {
+
+        return ResponseEntity.ok(pedidoService.obtenerVentasPorProducto(fechaInicio, fechaFin));
     }
 
     @PostMapping

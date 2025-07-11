@@ -11,7 +11,6 @@ import com.example.PuntoVentaBack.pagos.dto.PagoRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,8 +39,6 @@ public class PagoService {
     @Transactional
     public Pago procesarPago(PagoRequest request) {
         validarPagoRequest(request);
-
-        // Forzar permitir stock negativo para todos los pagos
         request.setPermiteStockNegativo(true);
 
         Pago pago = crearPago(request);
@@ -57,11 +54,9 @@ public class PagoService {
         if (request == null) {
             throw new IllegalArgumentException("La solicitud de pago no puede ser nula");
         }
-
         if (request.getProductos() == null || request.getProductos().isEmpty()) {
             throw new IllegalArgumentException("Debe incluir al menos un producto en el pago");
         }
-
         if (request.getTotal() == null || request.getTotal().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("El total del pago debe ser mayor a cero");
         }
@@ -71,7 +66,7 @@ public class PagoService {
         Pago pago = new Pago();
         pago.setMetodoPago(request.getMetodoPago());
         pago.setTotalPagado(request.getTotal());
-        pago.setPermiteStockNegativo(true); // Siempre permitir stock negativo
+        pago.setPermiteStockNegativo(true);
         pago.setFechaHora(LocalDateTime.now());
         return pagoRepository.save(pago);
     }
@@ -108,7 +103,7 @@ public class PagoService {
     protected void actualizarStocks(List<PagoRequest.ProductoPago> productos) {
         productos.forEach(producto -> {
             TallaConfiguracion talla = obtenerTallaProducto(producto);
-            talla.setStock(talla.getStock() - producto.getCantidad()); // Actualizar sin validar
+            talla.setStock(talla.getStock() - producto.getCantidad());
             tallaConfiguracionRepository.save(talla);
             productoService.actualizarStockProducto(producto.getProductoId());
         });
@@ -143,11 +138,9 @@ public class PagoService {
         if (fechaInicio == null || fechaFin == null) {
             throw new IllegalArgumentException("Las fechas no pueden ser nulas");
         }
-
         if (fechaInicio.isAfter(fechaFin)) {
             throw new IllegalArgumentException("La fecha de inicio no puede ser posterior a la fecha fin");
         }
-
         return pagoRepository.findByFechaHoraBetween(fechaInicio, fechaFin);
     }
 
@@ -167,12 +160,10 @@ public class PagoService {
     @Transactional
     public Pago actualizarPago(Long id, PagoRequest request) {
         validarPagoRequest(request);
-
         Pago pagoExistente = obtenerPagoPorIdOrThrow(id);
         pagoExistente.setMetodoPago(request.getMetodoPago());
         pagoExistente.setTotalPagado(request.getTotal());
-        pagoExistente.setPermiteStockNegativo(true); // Siempre permitir stock negativo
-
+        pagoExistente.setPermiteStockNegativo(true);
         return pagoRepository.save(pagoExistente);
     }
 }
