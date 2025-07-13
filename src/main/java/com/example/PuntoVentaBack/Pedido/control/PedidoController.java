@@ -1,5 +1,6 @@
 package com.example.PuntoVentaBack.Pedido.control;
 
+import com.example.PuntoVentaBack.Pedido.dto.VentasPorDiaDTO;
 import com.example.PuntoVentaBack.Pedido.dto.VentasPorProductoDTO;
 import com.example.PuntoVentaBack.Pedido.model.Pedido;
 import com.example.PuntoVentaBack.Pedido.dto.RegistroMultiplePedidosDTO;
@@ -9,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/pedidos")
@@ -58,8 +61,26 @@ public class PedidoController {
     public ResponseEntity<List<VentasPorProductoDTO>> obtenerVentasPorProducto(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaInicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaFin) {
-
         return ResponseEntity.ok(pedidoService.obtenerVentasPorProducto(fechaInicio, fechaFin));
+    }
+
+    @GetMapping("/reporte/ventas-dia")
+    public ResponseEntity<List<VentasPorDiaDTO>> obtenerVentasPorDia(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaInicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaFin) {
+        return ResponseEntity.ok(pedidoService.obtenerVentasPorDia(fechaInicio, fechaFin));
+    }
+
+    @GetMapping("/reporte/completo")
+    public ResponseEntity<Map<String, Object>> obtenerReporteCompleto(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaInicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaFin) {
+
+        Map<String, Object> reporte = new HashMap<>();
+        reporte.put("ventasPorDia", pedidoService.obtenerVentasPorDia(fechaInicio, fechaFin));
+        reporte.put("ventasPorProducto", pedidoService.obtenerVentasPorProducto(fechaInicio, fechaFin));
+
+        return ResponseEntity.ok(reporte);
     }
 
     @PostMapping

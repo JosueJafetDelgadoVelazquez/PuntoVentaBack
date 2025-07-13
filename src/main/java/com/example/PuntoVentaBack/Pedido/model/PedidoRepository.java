@@ -26,4 +26,19 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     List<Object[]> findVentasAgrupadasPorProducto(
             @Param("fechaInicio") LocalDateTime fechaInicio,
             @Param("fechaFin") LocalDateTime fechaFin);
+
+
+    // es para lo del ventas por dia en el metodo pago:
+
+    // En PedidoRepository.java
+    @Query("SELECT FUNCTION('DATE', p.pago.fechaHora) as fecha, " +
+            "SUM(p.pagoProducto * p.cantidad) as totalVendido, " +
+            "COUNT(DISTINCT p.pago) as transacciones " +
+            "FROM Pedido p " +
+            "WHERE p.pago.fechaHora BETWEEN :fechaInicio AND :fechaFin " +
+            "GROUP BY FUNCTION('DATE', p.pago.fechaHora) " +
+            "ORDER BY fecha")
+    List<Object[]> findVentasAgrupadasPorDia(
+            @Param("fechaInicio") LocalDateTime fechaInicio,
+            @Param("fechaFin") LocalDateTime fechaFin);
 }

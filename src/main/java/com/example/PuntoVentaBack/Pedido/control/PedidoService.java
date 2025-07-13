@@ -1,5 +1,6 @@
 package com.example.PuntoVentaBack.Pedido.control;
 
+import com.example.PuntoVentaBack.Pedido.dto.VentasPorDiaDTO;
 import com.example.PuntoVentaBack.Pedido.dto.VentasPorProductoDTO;
 import com.example.PuntoVentaBack.Pedido.model.Pedido;
 import com.example.PuntoVentaBack.Pedido.model.PedidoRepository;
@@ -117,6 +118,23 @@ public class PedidoService {
                     ((Number) result[3]).intValue(),  // cantidadVendida
                     (BigDecimal) result[4],   // totalVendido
                     (LocalDateTime) result[5] // fecha
+            );
+            ventas.add(dto);
+        }
+
+        return ventas;
+    }
+
+    @Transactional(readOnly = true)
+    public List<VentasPorDiaDTO> obtenerVentasPorDia(LocalDateTime fechaInicio, LocalDateTime fechaFin) {
+        List<Object[]> results = pedidoRepository.findVentasAgrupadasPorDia(fechaInicio, fechaFin);
+        List<VentasPorDiaDTO> ventas = new ArrayList<>();
+
+        for (Object[] result : results) {
+            VentasPorDiaDTO dto = new VentasPorDiaDTO(
+                    ((java.sql.Date) result[0]).toLocalDate(), // fecha
+                    (BigDecimal) result[1],                    // totalVendido
+                    ((Number) result[2]).intValue()            // transacciones
             );
             ventas.add(dto);
         }

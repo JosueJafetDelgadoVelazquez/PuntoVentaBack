@@ -11,10 +11,11 @@ import com.example.PuntoVentaBack.pagos.dto.PagoRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,6 +37,64 @@ public class PagoService {
         this.pedidoRepository = pedidoRepository;
     }
 
+    @Transactional(readOnly = true)
+    public Map<String, Object> generarReporteMetodosPago(List<Pago> pagos) {
+        Map<String, Object> reporte = new HashMap<>();
+
+        // 1. Agrupar pagos por método y contar transacciones
+        Map<String, List<Pago>> pagosPorMetodo = pagos.stream()
+                .collect(Collectors.groupingBy(Pago::getMetodoPago));
+
+        // 2. Calcular totales por método
+        Map<String, BigDecimal> totalesPorMetodo = new HashMap<>();
+        Map<String, Integer> transaccionesPorMetodo = new HashMap<>();
+
+        pagosPorMetodo.forEach((metodo, listaPagos) -> {
+            BigDecimal total = listaPagos.stream()
+                    .map(Pago::getTotalPagado)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            totalesPorMetodo.put(metodo, total);
+            transaccionesPorMetodo.put(metodo, listaPagos.size());
+        });
+
+        // 3. Calcular total general
+        BigDecimal totalGeneral = totalesPorMetodo.values().stream()
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        int totalTransacciones = pagos.size();
+
+        // 4. Calcular porcentajes y preparar datos ordenados
+        List<Map<String, Object>> datosReporte = new ArrayList<>();
+
+        totalesPorMetodo.forEach((metodo, total) -> {
+            BigDecimal porcentaje = totalGeneral.compareTo(BigDecimal.ZERO) == 0
+                    ? BigDecimal.ZERO
+                    : total.divide(totalGeneral, 4, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal(100))
+                    .setScale(2, RoundingMode.HALF_UP);
+
+            Map<String, Object> dato = new LinkedHashMap<>();
+            dato.put("metodo", metodo);
+            dato.put("cantidad", transaccionesPorMetodo.get(metodo));
+            dato.put("total", total);
+            dato.put("porcentaje", porcentaje);
+
+            datosReporte.add(dato);
+        });
+
+        // Ordenar por monto descendente
+        datosReporte.sort((a, b) -> ((BigDecimal) b.get("total")).compareTo((BigDecimal) a.get("total")));
+
+        // 5. Preparar respuesta final
+        reporte.put("totalGeneral", totalGeneral);
+        reporte.put("totalTransacciones", totalTransacciones);
+        reporte.put("metodos", datosReporte);
+
+        return reporte;
+    }
+
+    // ... (resto de los métodos se mantienen igual)
     @Transactional
     public Pago procesarPago(PagoRequest request) {
         validarPagoRequest(request);
