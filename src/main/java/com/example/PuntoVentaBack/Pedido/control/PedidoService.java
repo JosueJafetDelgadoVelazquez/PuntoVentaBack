@@ -1,10 +1,8 @@
 package com.example.PuntoVentaBack.Pedido.control;
 
-import com.example.PuntoVentaBack.Pedido.dto.VentasPorDiaDTO;
-import com.example.PuntoVentaBack.Pedido.dto.VentasPorProductoDTO;
+import com.example.PuntoVentaBack.Pedido.dto.*;
 import com.example.PuntoVentaBack.Pedido.model.Pedido;
 import com.example.PuntoVentaBack.Pedido.model.PedidoRepository;
-import com.example.PuntoVentaBack.Pedido.dto.ProductoPedidoDTO;
 import com.example.PuntoVentaBack.TallasConfiguracion.model.TallaConfiguracion;
 import com.example.PuntoVentaBack.inventory.control.ProductoService;
 import com.example.PuntoVentaBack.inventory.model.Producto;
@@ -12,7 +10,7 @@ import com.example.PuntoVentaBack.pagos.control.PagoService;
 import com.example.PuntoVentaBack.pagos.model.Pago;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.util.stream.Collectors;  // Añade este import
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -141,4 +139,28 @@ public class PedidoService {
 
         return ventas;
     }
+
+
+    // posiblemente lo de abajo sea inutil 
+    @Transactional(readOnly = true)
+    public List<VentasPorDiaProductoYTallaDTO> obtenerVentasPorDiaProductoYTalla(LocalDateTime fechaInicio, LocalDateTime fechaFin) {
+        List<Object[]> results = pedidoRepository.findVentasPorDiaProductoYTalla(fechaInicio, fechaFin);
+        List<VentasPorDiaProductoYTallaDTO> ventas = new ArrayList<>();
+
+        for (Object[] result : results) {
+            VentasPorDiaProductoYTallaDTO dto = new VentasPorDiaProductoYTallaDTO(
+                    ((java.sql.Date) result[0]).toLocalDate(), // fecha
+                    (String) result[1],                        // nombreProducto
+                    (String) result[2],                        // talla
+                    ((Number) result[3]).intValue(),          // cantidadVendida
+                    (BigDecimal) result[4],                   // totalVendido
+                    (BigDecimal) result[5]                    // precioPromedio
+            );
+            ventas.add(dto);
+        }
+
+        return ventas;
+    }
+
+
 }

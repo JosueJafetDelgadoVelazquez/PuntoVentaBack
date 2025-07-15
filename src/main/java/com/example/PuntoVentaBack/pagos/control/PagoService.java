@@ -225,4 +225,5 @@ public class PagoService {
         pagoExistente.setPermiteStockNegativo(true);
         return pagoRepository.save(pagoExistente);
     }
+
 }

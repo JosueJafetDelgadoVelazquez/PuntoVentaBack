@@ -1,6 +1,7 @@
 package com.example.PuntoVentaBack.Pedido.control;
 
 import com.example.PuntoVentaBack.Pedido.dto.VentasPorDiaDTO;
+import com.example.PuntoVentaBack.Pedido.dto.VentasPorDiaProductoYTallaDTO;
 import com.example.PuntoVentaBack.Pedido.dto.VentasPorProductoDTO;
 import com.example.PuntoVentaBack.Pedido.model.Pedido;
 import com.example.PuntoVentaBack.Pedido.dto.RegistroMultiplePedidosDTO;
@@ -112,4 +113,5 @@ public class PedidoController {
             return ResponseEntity.notFound().build();
         }
     }
+
 }

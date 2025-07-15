@@ -27,18 +27,45 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
             @Param("fechaInicio") LocalDateTime fechaInicio,
             @Param("fechaFin") LocalDateTime fechaFin);
 
-
-    // es para lo del ventas por dia en el metodo pago:
-
-    // En PedidoRepository.java
     @Query("SELECT FUNCTION('DATE', p.pago.fechaHora) as fecha, " +
             "SUM(p.pagoProducto * p.cantidad) as totalVendido, " +
             "COUNT(DISTINCT p.pago) as transacciones " +
             "FROM Pedido p " +
             "WHERE p.pago.fechaHora BETWEEN :fechaInicio AND :fechaFin " +
             "GROUP BY FUNCTION('DATE', p.pago.fechaHora) " +
-            "ORDER BY fecha")
+            "ORDER BY FUNCTION('DATE', p.pago.fechaHora)")
     List<Object[]> findVentasAgrupadasPorDia(
             @Param("fechaInicio") LocalDateTime fechaInicio,
             @Param("fechaFin") LocalDateTime fechaFin);
+
+    @Query("SELECT FUNCTION('DATE', p.pago.fechaHora) as fecha, " +
+            "p.producto.nombre as nombreProducto, " +
+            "p.talla as talla, " +
+            "SUM(p.cantidad) as cantidadVendida, " +
+            "SUM(p.pagoProducto * p.cantidad) as totalVendido, " +
+            "AVG(p.pagoProducto) as precioPromedio " +
+            "FROM Pedido p " +
+            "WHERE p.pago.fechaHora BETWEEN :fechaInicio AND :fechaFin " +
+            "GROUP BY FUNCTION('DATE', p.pago.fechaHora), p.producto.nombre, p.talla " +
+            "ORDER BY FUNCTION('DATE', p.pago.fechaHora), p.producto.nombre, p.talla")
+    List<Object[]> findVentasPorDiaProductoYTalla(
+            @Param("fechaInicio") LocalDateTime fechaInicio,
+            @Param("fechaFin") LocalDateTime fechaFin);
+
+    // reporte de ingresos por dia
+
+    @Query("SELECT FUNCTION('DATE', p.pago.fechaHora) as fecha, " +
+            "p.nombreProducto as nombreProducto, " +
+            "p.talla as talla, " +
+            "SUM(p.cantidad) as cantidad, " +
+            "SUM(p.pagoProducto * p.cantidad) as total " +
+            "FROM Pedido p " +
+            "WHERE p.pago.fechaHora BETWEEN :fechaInicio AND :fechaFin " +
+            "GROUP BY FUNCTION('DATE', p.pago.fechaHora), p.nombreProducto, p.talla " +
+            "ORDER BY FUNCTION('DATE', p.pago.fechaHora), p.nombreProducto")
+    List<Object[]> findVentasPorProductoYDia(
+            @Param("fechaInicio") LocalDateTime fechaInicio,
+            @Param("fechaFin") LocalDateTime fechaFin);
+
+
 }
